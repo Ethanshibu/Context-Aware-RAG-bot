@@ -27,7 +27,7 @@ if "vector_store" in st.session_state:
     else:
         st.error("Please set the GOOGLE_API_KEY in your .env file to use the Google LLM.")
 
-#  PDF Upload and Processing (Existing Code)
+#  PDF Upload and Processing
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
 if uploaded_file is not None:
@@ -53,7 +53,6 @@ if uploaded_file is not None:
         st.session_state.vector_store = vector_store
 
     st.success(f"File '{file_name}' uploaded and saved successfully!")
-   # st.info(f"You can find it at: {os.path.abspath(save_path)}")
  
 else:
     if "vector_store" in st.session_state:
