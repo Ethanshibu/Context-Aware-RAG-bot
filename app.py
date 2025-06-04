@@ -14,19 +14,20 @@ load_dotenv()
 st.set_page_config(page_title="Context Aware Chatbot")
 st.title("Context Aware Chatbot")
 
+# LLM and Retriever Initialization
 if "vector_store" in st.session_state:
     if os.getenv("GOOGLE_API_KEY"):
         llm = ChatGoogleGenerativeAI(
-            model="gemini-pro",
+            model="gemini-1.5-flash", # Changed to an available model
             api_key=os.getenv("GOOGLE_API_KEY")
         )
         retriever = st.session_state.vector_store.as_retriever()
-        st.session_state.retriver = retriever
-        st.success("llm and retriever initialized successfully!")
+        st.session_state.retriever = retriever 
+        st.success("LLM and retriever initialized successfully!")
     else:
         st.error("Please set the GOOGLE_API_KEY in your .env file to use the Google LLM.")
 
-
+#  PDF Upload and Processing (Existing Code)
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
 if uploaded_file is not None:
@@ -67,4 +68,50 @@ else:
             st.session_state.vector_store = vector_store
         st.success("Existing Knowledge base loaded successfully!")
     else:
-        st.write("Upload a pdf to start chatting.")
+        st.write("Upload a PDF to start chatting.")
+
+
+with st.container(border=True):
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Accept user input
+    if prompt := st.chat_input("Ask a question about the PDF..."):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        # Display user message in chat message container
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Generate assistant response
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
+            if "retriever" in st.session_state:
+                try:
+                    # Create the RAG chain
+                    qa_chain = RetrievalQA.from_chain_type(
+                        llm=llm,
+                        chain_type="stuff",
+                        retriever=st.session_state.retriever,
+                        return_source_documents=True # Optional: to see which documents were retrieved
+                    )
+                    # Get the answer from the RAG chain
+                    result = qa_chain.invoke({"query": prompt})
+                    full_response = result["result"]
+
+                except Exception as e:
+                    full_response = f"An error occurred: {e}. Please ensure the LLM and retriever are properly initialized."
+            else:
+                full_response = "The LLM and retriever are not yet initialized. Please upload a PDF or ensure your API key is set."
+            
+            message_placeholder.markdown(full_response)
+        
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
+    # --- End of New Chat Interface Code ---
