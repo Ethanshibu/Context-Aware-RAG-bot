@@ -3,7 +3,7 @@ import sys
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI 
 from langchain.chains import RetrievalQA
@@ -55,7 +55,7 @@ def main():
         
         # Create embeddings and vector store
         print("Creating embeddings (this may take a while)...")
-        embeddings = SentenceTransformerEmbeddings(model_name=CONFIG['model_name'])
+        embeddings = HuggingFaceEmbeddings(model_name=CONFIG['model_name'])
         
         with tempfile.TemporaryDirectory() as temp_dir:
             vector_store = Chroma.from_documents(
